@@ -90,13 +90,40 @@ function init() {
     },
     false
   );
-}
 
+  setInterval(() => {
+    timeValue += 1;
+    draw();
+  }, 500);
+}
+var timeValue = 0;
 var canvasData = {
   drawLines: [],
   textList: []
 };
 
+function getDrawTemplateString(indexi, drawId) {
+  return `<div class="col-md-12" id="${drawId}">
+          <label>Layer ${indexi}</label><br>
+          <button type="button" onclick="selectDrawLine('${drawId}')" class="btn btn-primary mb-2">select</button>
+          <button type="button" onclick="deleteDrawLine('${drawId}')" class="btn btn-primary mb-2">delete</button>
+          <hr>
+          </div>`;
+}
+var SelectedColor = "#000000";
+$("#colorSelect").change(() => {
+  SelectedColor = "" + $("#colorSelect").val();
+
+  if (lastSelectedText != null) {
+    for (var i = 0; i < canvasData.textList.length; i++) {
+      if (canvasData.textList[i].id == lastSelectedText) {
+        canvasData.textList[i].color = SelectedColor;
+        break;
+      }
+    }
+    draw();
+  }
+});
 var fontSize = $("#fontSizeRange").val();
 
 $("#fontSizeRange").change(el => {
@@ -137,7 +164,7 @@ function addNewText() {
     location: [200, 250],
     text: text,
     fontSize: fontSize,
-    color: "red",
+    color: "" + SelectedColor,
     id: "" + Date.now()
   });
 
@@ -149,6 +176,26 @@ function addNewText() {
     textListcombElmnt.append(new Option(el.text, el.id));
   });
 
+  draw();
+}
+function selectDrawLine(id) {
+  for (var i = 0; i < canvasData.drawLines.length; i++) {
+    if (canvasData.drawLines[i].id == id) {
+      canvasData.drawLines[i].selected = true;
+    } else {
+      canvasData.drawLines[i].selected = false;
+    }
+  }
+}
+function deleteDrawLine(id) {
+  for (var i = 0; i < canvasData.drawLines.length; i++) {
+    if (canvasData.drawLines[i].id == id) {
+      canvasData.drawLines.splice(i, 1);
+
+      $("#" + id).remove();
+      break;
+    }
+  }
   draw();
 }
 function draw() {
@@ -176,16 +223,40 @@ function draw() {
   if (bg_image != undefined) {
     ctx.drawImage(bg_image, 50, 50, img_draw_width, img_draw_heigth);
   }
-  canvasData.drawLines.forEach(line => {
+  canvasData.drawLines.forEach(lineCluster => {
+    if (lineCluster.selected) {
+      if (timeValue % 2 == 0) {
+        ctx.strokeStyle = "#000000";
+      } else {
+        ctx.strokeStyle = "#fefefe";
+      }
+    } else {
+      ctx.strokeStyle = lineCluster.strokeStyle;
+    }
+
+    ctx.lineWidth = lineCluster.lineWidth;
+
+    lineCluster.lines.forEach(line => {
+      ctx.beginPath();
+      ctx.moveTo(line.startPoint[0], line.startPoint[1]);
+      ctx.lineTo(line.endPoint[0], line.endPoint[1]);
+
+      ctx.stroke();
+      ctx.closePath();
+    });
+  });
+
+  drawCluster.forEach(line => {
+    ctx.strokeStyle = SelectedColor;
+    ctx.lineWidth = drawPointWidth;
     ctx.beginPath();
     ctx.moveTo(line.startPoint[0], line.startPoint[1]);
     ctx.lineTo(line.endPoint[0], line.endPoint[1]);
 
-    ctx.strokeStyle = line.strokeStyle;
-    ctx.lineWidth = line.lineWidth;
     ctx.stroke();
     ctx.closePath();
   });
+
   canvasData.textList.forEach(textObj => {
     ctx.fillStyle = textObj.color;
     ctx.font = textObj.fontSize + "px Comic Sans MS";
@@ -209,16 +280,21 @@ function draw() {
   //console.log(drawLines.length);
 }
 function deleteSelected() {
+  console.log(lastSelectedText);
+  console.log(canvasData.textList.length);
   if (lastSelectedText != null) {
     for (var i = 0; i < canvasData.textList.length; i++) {
+      console.log(canvasData.textList[i].id == lastSelectedText);
       if (canvasData.textList[i].id == lastSelectedText) {
-        canvasData.textList.slice(i, 1);
+        canvasData.textList.splice(i, 1);
         break;
       }
     }
   }
+  console.log(canvasData.textList.length);
   lastSelectedText = null;
   $("#textInput1").val("");
+  draw();
 }
 
 function clearCanvas() {
@@ -245,6 +321,13 @@ function loadData() {
     url: "/restore"
   }).done(function(data) {
     canvasData = data.canvasData;
+
+    indexItem = 0;
+    canvasData.drawLines.forEach(lineCluster => {
+      indexItem += 1;
+      $("#drawItems").append(getDrawTemplateString(indexItem, lineCluster.id));
+    });
+
     draw();
   });
 }
@@ -259,6 +342,8 @@ var selectedText = null;
 var hoverText = null;
 var mouseDown = [0, 0];
 var lastSelectedText = null;
+
+var drawCluster = [];
 function findxy(res, e) {
   var mousex = e.clientX - canvasOffsetLeft;
   var mousey = e.clientY - canvasOffsetTop;
@@ -278,6 +363,11 @@ function findxy(res, e) {
       textObj.hover = true;
       if (res == "down") {
         textObj.downLocation = [textObj.location[0], textObj.location[1]];
+
+        console.log(textObj.color);
+        $("#colorSelect").val(textObj.color);
+        $("#fontSizeRange").val(textObj.fontSize);
+        $("#textInput1").val(textObj.text);
       }
       hoverText = textObj.id;
     } else {
@@ -286,6 +376,7 @@ function findxy(res, e) {
   });
 
   if (res == "down") {
+    drawCluster = [];
     prevX = currX;
     prevY = currY;
     currX = e.clientX - canvasOffsetLeft;
@@ -311,6 +402,20 @@ function findxy(res, e) {
       lastSelectedText = "" + selectedText;
     }
 
+    var newId = Date.now();
+    if (drawCluster.length > 0) {
+      canvasData.drawLines.push({
+        lines: JSON.parse(JSON.stringify(drawCluster)),
+        strokeStyle: SelectedColor,
+        lineWidth: drawPointWidth,
+        id: newId
+      });
+      indexItem += 1;
+      console.log(getDrawTemplateString(indexItem, newId));
+      $("#drawItems").append(getDrawTemplateString(indexItem, newId));
+
+      drawCluster = [];
+    }
     hoverText = null;
     selectedText = null;
   }
@@ -323,6 +428,7 @@ function findxy(res, e) {
             canvasData.textList[i].downLocation[0] + (mousex - mouseDown[0]),
             canvasData.textList[i].downLocation[1] + (mousey - mouseDown[1])
           ];
+
           break;
         }
       }
@@ -333,17 +439,15 @@ function findxy(res, e) {
       currX = e.clientX - canvasOffsetLeft;
       currY = e.clientY - canvasOffsetTop;
 
-      canvasData.drawLines.push({
+      drawCluster.push({
         startPoint: [prevX, prevY],
-        endPoint: [currX, currY],
-        strokeStyle: drawStyle,
-        lineWidth: drawPointWidth
+        endPoint: [currX, currY]
       });
     }
   }
   draw();
 }
-
+var indexItem = 0;
 bg_image.onload = function() {
   init();
 };

@@ -13,7 +13,7 @@
 <body>
     <div class="container p-4">
 
-        <div class="row col-md-11 mr-auto ml-auto">
+        <div class="row ">
             <div class="col-md-3">
                 <h1>Title</h1>
                 <button onclick="saveToJson()">Save</button>
@@ -21,6 +21,9 @@
                     <!--<select id="textListcomb">
                     </select>-->
 
+                    <label for="colorSelect">Color:</label>
+                    <input type="color" id="colorSelect" name="colorSelect" value="#000000" />
+                    <br>
                     <label for="textInput1">Add Text:</label>
                     <input type="text" class="form-control" id="textInput1" placeholder="Text">
 
@@ -29,6 +32,10 @@
                     <button type="button" onclick="clearSelect()" class="btn btn-primary mb-2">clear select</button>
                     <button type="button" onclick="addNewText()" class="btn btn-primary mb-2">add</button>
                     <button type="button" onclick="deleteSelected()" class="btn btn-danger mb-2">delete</button>
+                </div>
+                <label>Layers:</label>
+                <div class="container itemDiv row p-2" id="drawItems">
+
                 </div>
             </div>
             <div class="col-md-9"> <canvas id='main_canv'></canvas></div>
