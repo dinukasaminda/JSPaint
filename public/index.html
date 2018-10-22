@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container p-4">
+
+        <div class="row col-md-11 mr-auto ml-auto">
+            <div class="col-md-3">
+                <h1>Title</h1>
+                <button onclick="saveToJson()">Save</button>
+                <div class="container ">
+                    <select id="textListcomb">
+                    </select>
+
+                    <label for="textInput1">Add Text:</label>
+                    <input type="text" class="form-control" id="textInput1" placeholder="Text">
+
+                    <label for="fontSizeRange">Font Size : <span id="fontSizeRangeLbl"></span></label>
+                    <input type="range" min="15" id="fontSizeRange" max="100" value="32">
+                    <button type="button" onclick="addNewText()" class="btn btn-primary mb-2">add</button>
+                    <button type="button" onclick="addNewText()" class="btn btn-danger mb-2">delete</button>
+                </div>
+            </div>
+            <div class="col-md-9"> <canvas id='main_canv'></canvas></div>
+        </div>
+    </div>
+
+    <style type="text/css">
+        canvas {
+            background: #3f3f3f;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script sync src="canvesg.js"></script>
+
+</body>
+
+</html>
