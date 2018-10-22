@@ -102,7 +102,33 @@ var fontSize = $("#fontSizeRange").val();
 $("#fontSizeRange").change(el => {
   fontSize = $("#fontSizeRange").val();
   $("#fontSizeRangeLbl").html(fontSize);
+  if (lastSelectedText != null) {
+    for (var i = 0; i < canvasData.textList.length; i++) {
+      if (canvasData.textList[i].id == lastSelectedText) {
+        canvasData.textList[i].fontSize = fontSize;
+        break;
+      }
+    }
+    draw();
+  }
 });
+$("#textInput1").keyup(el => {
+  var text = $("#textInput1").val();
+
+  if (lastSelectedText != null) {
+    for (var i = 0; i < canvasData.textList.length; i++) {
+      if (canvasData.textList[i].id == lastSelectedText) {
+        canvasData.textList[i].text = text;
+        break;
+      }
+    }
+    draw();
+  }
+});
+
+function clearSelect() {
+  lastSelectedText = null;
+}
 function addNewText() {
   var text = $("#textInput1").val();
 
@@ -166,18 +192,33 @@ function draw() {
     ctx.textAlign = "center";
     ctx.fillText(textObj.text, textObj.location[0], textObj.location[1]);
 
-    var textWidth = ctx.measureText(textObj.text).width;
-    var textHeight = ctx.measureText("M").width;
-    ctx.rect(
-      textObj.location[0] - textWidth / 2,
-      textObj.location[1] - textHeight,
-      textWidth,
-      textHeight
-    );
-    ctx.stroke();
+    if (textObj.hover || textObj.id == lastSelectedText) {
+      var textWidth = ctx.measureText(textObj.text).width;
+      var textHeight = ctx.measureText("M").width;
+
+      ctx.rect(
+        textObj.location[0] - textWidth / 2,
+        textObj.location[1] - textHeight,
+        textWidth,
+        textHeight
+      );
+      ctx.stroke();
+    }
   });
 
   //console.log(drawLines.length);
+}
+function deleteSelected() {
+  if (lastSelectedText != null) {
+    for (var i = 0; i < canvasData.textList.length; i++) {
+      if (canvasData.textList[i].id == lastSelectedText) {
+        canvasData.textList.slice(i, 1);
+        break;
+      }
+    }
+  }
+  lastSelectedText = null;
+  $("#textInput1").val("");
 }
 
 function clearCanvas() {
@@ -214,14 +255,45 @@ function save() {
   document.getElementById("canvasimg").src = dataURL;
   document.getElementById("canvasimg").style.display = "inline";
 }
-
+var selectedText = null;
+var hoverText = null;
+var mouseDown = [0, 0];
+var lastSelectedText = null;
 function findxy(res, e) {
+  var mousex = e.clientX - canvasOffsetLeft;
+  var mousey = e.clientY - canvasOffsetTop;
+  hoverText = null;
+  canvasData.textList.forEach(textObj => {
+    ctx.font = textObj.fontSize + "px Comic Sans MS";
+    ctx.textAlign = "center";
+
+    var textWidth = ctx.measureText(textObj.text).width;
+    var textHeight = ctx.measureText("M").width;
+    if (
+      textObj.location[0] - textWidth / 2 < mousex &&
+      mousex < textObj.location[0] - textWidth / 2 + textWidth &&
+      textObj.location[1] - textHeight < mousey &&
+      mousey < textObj.location[1]
+    ) {
+      textObj.hover = true;
+      if (res == "down") {
+        textObj.downLocation = [textObj.location[0], textObj.location[1]];
+      }
+      hoverText = textObj.id;
+    } else {
+      textObj.hover = false;
+    }
+  });
+
   if (res == "down") {
     prevX = currX;
     prevY = currY;
     currX = e.clientX - canvasOffsetLeft;
     currY = e.clientY - canvasOffsetTop;
-
+    mouseDown = [currX, currY];
+    if (hoverText != null) {
+      selectedText = "" + hoverText;
+    }
     flag = true;
     dot_flag = true;
     if (dot_flag) {
@@ -234,9 +306,28 @@ function findxy(res, e) {
   }
   if (res == "up" || res == "out") {
     flag = false;
+    if (selectedText != null) {
+      console.log("lastSelectedText" + lastSelectedText);
+      lastSelectedText = "" + selectedText;
+    }
+
+    hoverText = null;
+    selectedText = null;
   }
   if (res == "move") {
-    if (flag) {
+    if (selectedText != null) {
+      console.log("hover:" + selectedText);
+      for (var i = 0; i < canvasData.textList.length; i++) {
+        if (canvasData.textList[i].id == selectedText) {
+          canvasData.textList[i].location = [
+            canvasData.textList[i].downLocation[0] + (mousex - mouseDown[0]),
+            canvasData.textList[i].downLocation[1] + (mousey - mouseDown[1])
+          ];
+          break;
+        }
+      }
+    }
+    if (flag && selectedText == null) {
       prevX = currX;
       prevY = currY;
       currX = e.clientX - canvasOffsetLeft;
@@ -248,9 +339,9 @@ function findxy(res, e) {
         strokeStyle: drawStyle,
         lineWidth: drawPointWidth
       });
-      draw();
     }
   }
+  draw();
 }
 
 bg_image.onload = function() {

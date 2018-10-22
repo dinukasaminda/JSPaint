@@ -18,16 +18,17 @@
                 <h1>Title</h1>
                 <button onclick="saveToJson()">Save</button>
                 <div class="container ">
-                    <select id="textListcomb">
-                    </select>
+                    <!--<select id="textListcomb">
+                    </select>-->
 
                     <label for="textInput1">Add Text:</label>
                     <input type="text" class="form-control" id="textInput1" placeholder="Text">
 
                     <label for="fontSizeRange">Font Size : <span id="fontSizeRangeLbl"></span></label>
                     <input type="range" min="15" id="fontSizeRange" max="100" value="32">
+                    <button type="button" onclick="clearSelect()" class="btn btn-primary mb-2">clear select</button>
                     <button type="button" onclick="addNewText()" class="btn btn-primary mb-2">add</button>
-                    <button type="button" onclick="addNewText()" class="btn btn-danger mb-2">delete</button>
+                    <button type="button" onclick="deleteSelected()" class="btn btn-danger mb-2">delete</button>
                 </div>
             </div>
             <div class="col-md-9"> <canvas id='main_canv'></canvas></div>
